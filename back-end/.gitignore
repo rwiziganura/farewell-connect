@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.log
+server.log
+!.env.example
+**/!.env.exaplem
+# Never commit credentials or private keys
+# The certs/ folder contains the public CA cert and IS safe to commit
