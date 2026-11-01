@@ -4,24 +4,10 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'FAREWELL CONNECT | Every service. One place.',
-  description: 'Find, compare and connect with trusted funeral-service providers across Rwanda.',
-  generator: 'v0.app',
+  description: 'FAREWELL CONNECT connects families with trusted funeral service providers across Rwanda. Find, compare and book with confidence.',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/icon.svg',
+    apple: '/apple-icon.svg',
   },
 }
 
