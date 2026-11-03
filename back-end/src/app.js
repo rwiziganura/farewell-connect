@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import errorHandler from './middleware/errorHandler.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
+import bookingsRouter from './routes/bookings.js';
+import adminRouter from './routes/admin.js';
 
 dotenv.config();
 
@@ -26,6 +28,8 @@ app.use(express.urlencoded({ extended: true }));
 // --- Routes ---
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/bookings', bookingsRouter);
+app.use('/api/admin', adminRouter);
 
 // Handle requests to undefined routes
 app.use((req, res) => {

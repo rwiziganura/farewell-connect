@@ -6,7 +6,7 @@ import {
   login,
   getMe,
 } from '../controllers/authController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, authorise } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -100,6 +100,6 @@ router.post('/provider-register', providerRegisterRules, registerProvider);
 router.post('/login', loginRules, login);
 
 // GET /api/auth/me — get current authenticated user (protected)
-router.get('/me', authenticate, getMe);
+router.get('/me', authenticate, authorise('customer', 'provider', 'admin'), getMe);
 
 export default router;
