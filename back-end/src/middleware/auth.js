@@ -27,6 +27,10 @@ export function authenticate(req, res, next) {
     req.user = { id: decoded.id, role: decoded.role };
     next();
   } catch (err) {
+    console.error('[auth] JWT verification failed:', {
+      name: err?.name || 'Error',
+      message: err?.message || 'Unknown verification error',
+    });
     return res.status(401).json({
       success: false,
       message: 'Invalid or expired token.',
