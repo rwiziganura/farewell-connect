@@ -6,6 +6,7 @@ import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import bookingsRouter from './routes/bookings.js';
 import adminRouter from './routes/admin.js';
+import servicesRouter from './routes/services.js';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/services', servicesRouter);
 
 // Handle requests to undefined routes
 app.use((req, res) => {
