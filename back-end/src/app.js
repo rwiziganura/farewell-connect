@@ -13,9 +13,15 @@ const app = express();
 
 // --- Middleware ---
 
-// Allow requests from the frontend origin
+const allowedOrigins = new Set([
+  process.env.FRONTEND_URL || 'https://farewell-connect.vercel.app',
+  'http://localhost:3000',
+]);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin(origin, callback) {
+    callback(null, !origin || allowedOrigins.has(origin));
+  },
   credentials: true,
 }));
 
