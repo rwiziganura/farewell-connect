@@ -4,6 +4,7 @@ import {
   createFields,
   createService,
   deleteMyService,
+  getActiveCategories,
   getMyService,
   getMyServices,
   isPositiveBigIntId,
@@ -142,6 +143,7 @@ router.use(authenticate, authorise('provider'));
 router.post('/', creationRules, createService);
 router.get('/', getMyServices);
 router.get('/my', getMyServices);
+router.get('/categories', getActiveCategories);
 router.get('/:serviceId', serviceIdRule, getMyService);
 router.put('/:serviceId', serviceIdRule, updateRules, updateMyService);
 router.patch(

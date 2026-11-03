@@ -3,6 +3,7 @@ import {
   createProviderService,
   deleteProviderService,
   getProviderService,
+  listActiveCategories,
   listProviderServices,
   setProviderServiceActive,
   updateProviderService,
@@ -130,6 +131,15 @@ export async function getMyServices(req, res) {
     return res.status(200).json({ success: true, services });
   } catch (error) {
     return sendError(res, error, 'retrieve services');
+  }
+}
+
+export async function getActiveCategories(req, res) {
+  try {
+    const categories = await listActiveCategories();
+    return res.status(200).json({ success: true, categories });
+  } catch (error) {
+    return sendError(res, error, 'retrieve categories');
   }
 }
 

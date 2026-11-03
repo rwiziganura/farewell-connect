@@ -128,6 +128,16 @@ export async function listProviderServices(userId) {
   }
 }
 
+export async function listActiveCategories() {
+  const [rows] = await pool.execute(
+    `SELECT CAST(id AS CHAR) AS id, category_name, slug, description
+     FROM categories
+     WHERE is_active = 1
+     ORDER BY category_name ASC, id ASC`,
+  );
+  return rows;
+}
+
 export async function getProviderService(userId, serviceId) {
   const connection = await pool.getConnection();
   try {
