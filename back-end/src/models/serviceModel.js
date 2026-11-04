@@ -19,6 +19,35 @@ const serviceColumns = `
   s.updated_at
 `;
 
+const publicServiceColumns = `
+  CAST(s.id AS CHAR) AS id,
+  s.service_name,
+  s.slug,
+  s.description,
+  s.price,
+  s.currency,
+  s.pricing_type,
+  s.availability_status,
+  s.location,
+  s.district,
+  CAST(c.id AS CHAR) AS category_id,
+  c.category_name,
+  CAST(pp.id AS CHAR) AS provider_id,
+  pp.business_name,
+  pp.average_rating AS provider_rating,
+  pp.total_reviews AS provider_review_count
+`;
+
+const publicServiceJoins = `
+  FROM services s
+  JOIN categories c ON c.id = s.category_id AND c.is_active = 1
+  JOIN provider_profiles pp ON pp.id = s.provider_id
+    AND pp.verification_status = 'verified'
+  JOIN users u ON u.id = pp.user_id
+    AND u.role = 'provider'
+    AND u.account_status = 'active'
+`;
+
 function createStatusError(status, message) {
   const error = new Error(message);
   error.status = status;
@@ -136,6 +165,88 @@ export async function listActiveCategories() {
      ORDER BY category_name ASC, id ASC`,
   );
   return rows;
+}
+
+export async function listPublicServices({
+  search,
+  category,
+  district,
+  minPrice,
+  maxPrice,
+  page = 1,
+  limit = 20,
+}) {
+  if (!Number.isSafeInteger(page) || page < 1) {
+    throw new RangeError('Page must be a positive safe integer.');
+  }
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
+    throw new RangeError('Limit must be a positive safe integer no greater than 50.');
+  }
+
+  const offset = (page - 1) * limit;
+  if (!Number.isSafeInteger(offset) || offset < 0) {
+    throw new RangeError('Pagination offset must be a non-negative safe integer.');
+  }
+
+  const conditions = ['s.is_active = 1'];
+  const values = [];
+
+  if (search) {
+    conditions.push('(s.service_name LIKE ? OR s.description LIKE ?)');
+    const searchPattern = `%${search}%`;
+    values.push(searchPattern, searchPattern);
+  }
+  if (category) {
+    conditions.push('s.category_id = ?');
+    values.push(category);
+  }
+  if (district) {
+    conditions.push('LOWER(s.district) = LOWER(?)');
+    values.push(district);
+  }
+  if (minPrice !== undefined) {
+    conditions.push('s.price >= ?');
+    values.push(minPrice);
+  }
+  if (maxPrice !== undefined) {
+    conditions.push('s.price <= ?');
+    values.push(maxPrice);
+  }
+
+  const whereClause = `WHERE ${conditions.join(' AND ')}`;
+  const [countRows] = await pool.execute(
+    `SELECT COUNT(*) AS total${publicServiceJoins} ${whereClause}`,
+    values,
+  );
+  const total = Number(countRows[0]?.total || 0);
+  const [services] = await pool.query(
+    `SELECT ${publicServiceColumns}${publicServiceJoins}
+     ${whereClause}
+     ORDER BY s.created_at DESC, s.id DESC
+     LIMIT ${limit} OFFSET ${offset}`,
+    values,
+  );
+
+  return {
+    services,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+export async function getPublicService(serviceId) {
+  const [rows] = await pool.execute(
+    `SELECT ${publicServiceColumns}${publicServiceJoins}
+     WHERE s.id = ? AND s.is_active = 1
+     LIMIT 1`,
+    [serviceId],
+  );
+  if (!rows[0]) throw createStatusError(404, 'Service not found.');
+  return rows[0];
 }
 
 export async function getProviderService(userId, serviceId) {

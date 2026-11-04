@@ -2,8 +2,10 @@ import { validationResult } from 'express-validator';
 import {
   createProviderService,
   deleteProviderService,
+  getPublicService,
   getProviderService,
   listActiveCategories,
+  listPublicServices,
   listProviderServices,
   setProviderServiceActive,
   updateProviderService,
@@ -140,6 +142,51 @@ export async function getActiveCategories(req, res) {
     return res.status(200).json({ success: true, categories });
   } catch (error) {
     return sendError(res, error, 'retrieve categories');
+  }
+}
+
+export async function getPublicServices(req, res) {
+  if (handleValidationErrors(req, res)) return;
+
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : undefined;
+  const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+  const district = typeof req.query.district === 'string' ? req.query.district.trim() : undefined;
+  const minPrice = typeof req.query.minPrice === 'string' ? req.query.minPrice : undefined;
+  const maxPrice = typeof req.query.maxPrice === 'string' ? req.query.maxPrice : undefined;
+  const page = typeof req.query.page === 'string' ? Number(req.query.page) : 1;
+  const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 20;
+
+  if (minPrice !== undefined && maxPrice !== undefined && Number(minPrice) > Number(maxPrice)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed.',
+      errors: [{ field: 'minPrice', message: 'Minimum price cannot exceed maximum price.' }],
+    });
+  }
+
+  try {
+    const result = await listPublicServices({
+      search,
+      category,
+      district,
+      minPrice,
+      maxPrice,
+      page,
+      limit,
+    });
+    return res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    return sendError(res, error, 'retrieve public services');
+  }
+}
+
+export async function getPublicServiceDetails(req, res) {
+  if (handleValidationErrors(req, res)) return;
+  try {
+    const service = await getPublicService(String(req.params.serviceId));
+    return res.status(200).json({ success: true, service });
+  } catch (error) {
+    return sendError(res, error, 'retrieve public service');
   }
 }
 

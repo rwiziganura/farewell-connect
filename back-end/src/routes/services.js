@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { body, param } from 'express-validator';
+import { body, param, query } from 'express-validator';
 import {
   createFields,
   createService,
   deleteMyService,
   getActiveCategories,
+  getPublicServiceDetails,
+  getPublicServices,
   getMyService,
   getMyServices,
   isPositiveBigIntId,
@@ -21,6 +23,46 @@ const router = Router();
 const serviceIdRule = param('serviceId')
   .custom(isPositiveBigIntId)
   .withMessage('Service ID must be a positive integer.');
+
+const publicServiceQueryRules = [
+  query('search')
+    .optional()
+    .isString().withMessage('Search must be text.')
+    .bail()
+    .trim()
+    .notEmpty().withMessage('Search must not be empty.')
+    .isLength({ max: 100 }).withMessage('Search must be 100 characters or fewer.'),
+  query('category')
+    .optional()
+    .custom(isPositiveBigIntId)
+    .withMessage('Category must be a positive integer.'),
+  query('district')
+    .optional()
+    .isString().withMessage('District must be text.')
+    .bail()
+    .trim()
+    .notEmpty().withMessage('District must not be empty.')
+    .isLength({ max: 100 }).withMessage('District must be 100 characters or fewer.'),
+  query('minPrice')
+    .optional()
+    .custom(isValidPrice)
+    .withMessage('Minimum price must be non-negative with at most 2 decimal places.'),
+  query('maxPrice')
+    .optional()
+    .custom(isValidPrice)
+    .withMessage('Maximum price must be non-negative with at most 2 decimal places.'),
+  query('page')
+    .optional()
+    .isString().withMessage('Page must be a positive integer.')
+    .bail()
+    .matches(/^[1-9]\d{0,5}$/).withMessage('Page must be between 1 and 999999.'),
+  query('limit')
+    .optional()
+    .isString().withMessage('Limit must be an integer between 1 and 50.')
+    .bail()
+    .matches(/^(?:[1-9]|[1-4]\d|50)$/)
+    .withMessage('Limit must be an integer between 1 and 50.'),
+];
 
 const creationRules = [
   body().custom((_, { req }) => validateAllowedFields(req, createFields)),
@@ -138,13 +180,15 @@ const updateRules = [
     .withMessage('Availability status must be available, by_request, or unavailable.'),
 ];
 
+router.get('/', publicServiceQueryRules, getPublicServices);
+router.get('/my', authenticate, authorise('provider'), getMyServices);
+router.get('/my/:serviceId', authenticate, authorise('provider'), serviceIdRule, getMyService);
+router.get('/categories', authenticate, authorise('provider'), getActiveCategories);
+router.get('/:serviceId', serviceIdRule, getPublicServiceDetails);
+
 router.use(authenticate, authorise('provider'));
 
 router.post('/', creationRules, createService);
-router.get('/', getMyServices);
-router.get('/my', getMyServices);
-router.get('/categories', getActiveCategories);
-router.get('/:serviceId', serviceIdRule, getMyService);
 router.put('/:serviceId', serviceIdRule, updateRules, updateMyService);
 router.patch(
   '/:serviceId/status',
