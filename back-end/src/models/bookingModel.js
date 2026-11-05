@@ -154,6 +154,25 @@ export async function findCustomerBookings(customerId) {
   return rows;
 }
 
+export async function findCustomerBooking(bookingId, customerId) {
+  const [rows] = await pool.execute(
+    `SELECT CAST(b.id AS CHAR) AS id, b.booking_reference,
+            b.booking_date, b.customer_message, b.agreed_price, b.currency,
+            b.status, b.service_address, b.district,
+            CAST(b.service_id AS CHAR) AS service_id, s.service_name,
+            s.location AS service_location,
+            CAST(b.provider_id AS CHAR) AS provider_id, pp.business_name,
+            b.created_at
+     FROM bookings b
+     JOIN services s ON s.id = b.service_id
+     JOIN provider_profiles pp ON pp.id = b.provider_id
+     WHERE b.id = ? AND b.customer_id = ?
+     LIMIT 1`,
+    [bookingId, customerId],
+  );
+  return rows[0] || null;
+}
+
 export async function findProviderBookings(providerId) {
   const [rows] = await pool.execute(
     `SELECT CAST(b.id AS CHAR) AS id, b.booking_reference, b.booking_date,

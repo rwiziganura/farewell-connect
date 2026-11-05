@@ -1,4 +1,4 @@
-import { CustomerDashboard } from '@/components/app-pages'
+import { CustomerDashboard } from '@/components/customer-dashboard'
 import { RequireAuth } from '@/app/providers'
 
 export default function CustomerDashboardRoute() {

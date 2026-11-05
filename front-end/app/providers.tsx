@@ -176,9 +176,11 @@ export function Providers({ children }: { children: ReactNode }) {
 
 export function RequireAuth({
   role,
+  loginRedirectTo = '/login',
   children,
 }: {
   role: UserRole
+  loginRedirectTo?: string
   children: ReactNode
 }) {
   const { token, user, initialized, error, retryAuthentication } = useAuth()
@@ -187,13 +189,13 @@ export function RequireAuth({
   useEffect(() => {
     if (!initialized || error) return
     if (!token || !user) {
-      router.replace('/login')
+      router.replace(loginRedirectTo)
       return
     }
     if (user.role !== role) {
       router.replace(roleHome[user.role])
     }
-  }, [token, user, initialized, error, role, router])
+  }, [token, user, initialized, error, role, loginRedirectTo, router])
 
   if (!initialized || (!error && (!token || !user || user.role !== role))) {
     return (

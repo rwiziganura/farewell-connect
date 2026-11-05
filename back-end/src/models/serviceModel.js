@@ -249,6 +249,16 @@ export async function getPublicService(serviceId) {
   return rows[0];
 }
 
+export async function findPublicProviderServices(providerId) {
+  const [rows] = await pool.execute(
+    `SELECT ${publicServiceColumns}${publicServiceJoins}
+     WHERE pp.id = ? AND s.is_active = 1
+     ORDER BY s.created_at DESC, s.id DESC`,
+    [providerId],
+  );
+  return rows;
+}
+
 export async function getProviderService(userId, serviceId) {
   const connection = await pool.getConnection();
   try {

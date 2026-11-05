@@ -1,4 +1,4 @@
-import { ProviderDetail } from '@/components/app-pages'
+import { ProviderProfile } from '@/components/provider-profile'
 
 export default async function ProviderPage({
   params,
@@ -6,5 +6,5 @@ export default async function ProviderPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  return <ProviderDetail id={id} />
+  return <ProviderProfile providerId={id} />
 }

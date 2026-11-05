@@ -62,6 +62,10 @@ function isMarketplaceService(value: unknown): value is MarketplaceService {
     && nullableNumber(value.provider_review_count)
 }
 
+function isSavedProvider(value: unknown): value is { id: string } {
+  return isRecord(value) && typeof value.id === 'string'
+}
+
 function isMarketplacePagination(value: unknown): value is MarketplacePagination {
   return isRecord(value)
     && Number.isSafeInteger(value.page)
@@ -82,7 +86,7 @@ function formatPrice(value: string | number | null, currency: string) {
 }
 
 export function Marketplace({ categorySlug }: { categorySlug?: string }){
-  const {token}=useAuth()
+  const {token,user}=useAuth()
   const [search,setSearch]=useState('')
   const [categoryId,setCategoryId]=useState('')
   const [district,setDistrict]=useState('')
@@ -95,7 +99,9 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
   const [retryCount,setRetryCount]=useState(0)
-  const [saved,setSaved]=useState<string[]>([])
+  const [savedProviderIds,setSavedProviderIds]=useState<string[]>([])
+  const [savingProviderId,setSavingProviderId]=useState('')
+  const [favoriteError,setFavoriteError]=useState('')
   const [sort,setSort]=useState('Popular')
 
   useEffect(() => {
@@ -177,6 +183,72 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
   const locationFor = (service: MarketplaceService) => [service.district, service.location]
     .filter((value, index, values) => value && values.findIndex((item) => item?.toLowerCase() === value.toLowerCase()) === index)
     .join(' · ')
+
+  useEffect(() => {
+    setSavedProviderIds([])
+    if (!token || user?.role !== 'customer') {
+      return
+    }
+
+    const controller = new AbortController()
+    async function loadFavorites() {
+      try {
+        const response = await fetch(apiUrl('/api/favorites/me'), {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        })
+        const payload = await parseApiResponse(response)
+        if (!response.ok) {
+          throw new Error(isRecord(payload) && typeof payload.message === 'string'
+            ? payload.message
+            : 'Could not load saved providers.')
+        }
+        if (!isRecord(payload) || !Array.isArray(payload.favorites) || !payload.favorites.every(isSavedProvider)) {
+          throw new Error('The server returned an invalid saved providers response.')
+        }
+        setSavedProviderIds(payload.favorites.map((favorite) => favorite.id))
+        setFavoriteError('')
+      } catch (reason) {
+        if (!controller.signal.aborted) {
+          setFavoriteError(reason instanceof Error ? reason.message : 'Could not load saved providers.')
+        }
+      }
+    }
+    void loadFavorites()
+    return () => controller.abort()
+  }, [token, user?.role])
+
+  async function toggleProviderSaved(providerId: string) {
+    if (!token || user?.role !== 'customer' || savingProviderId) return
+    const isSaved = savedProviderIds.includes(providerId)
+    setSavingProviderId(providerId)
+    setFavoriteError('')
+    try {
+      const response = await fetch(apiUrl(isSaved
+        ? `/api/favorites/${encodeURIComponent(providerId)}`
+        : '/api/favorites'), {
+        method: isSaved ? 'DELETE' : 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(isSaved ? {} : { 'Content-Type': 'application/json' }),
+        },
+        ...(!isSaved ? { body: JSON.stringify({ provider_id: providerId }) } : {}),
+      })
+      const payload = await parseApiResponse(response)
+      if (!response.ok) {
+        throw new Error(isRecord(payload) && typeof payload.message === 'string'
+          ? payload.message
+          : 'Could not update saved providers.')
+      }
+      setSavedProviderIds((current) => isSaved
+        ? current.filter((id) => id !== providerId)
+        : current.includes(providerId) ? current : [...current, providerId])
+    } catch (reason) {
+      setFavoriteError(reason instanceof Error ? reason.message : 'Could not update saved providers.')
+    } finally {
+      setSavingProviderId('')
+    }
+  }
 
   function resetFilters() {
     setSearch('')
@@ -280,6 +352,7 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
         </div>
       </div>
 
+      {favoriteError && <p role="alert" className="mt-5 rounded-xl bg-[#f1e5e3] p-3 text-sm text-[#8a5b55]">{favoriteError}</p>}
       {loading
         ? <div role="status" className="mt-12 rounded-2xl border border-[#e8e4dd] bg-white p-12 text-center text-sm text-[#697586]">Finding available services…</div>
         : error
@@ -303,10 +376,12 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
                       <div className="relative flex h-28 items-center justify-center bg-gradient-to-br from-[#f5f0e8] via-[#f2ede4] to-[#e8efe9]">
                         <Flower2 className="size-10 text-[#b49a62]" aria-hidden="true"/>
                         <button
-                          onClick={()=>setSaved(items=>items.includes(service.id)?items.filter(id=>id!==service.id):[...items,service.id])}
-                          aria-label={saved.includes(service.id)?`Remove ${service.service_name} from saved`:`Save ${service.service_name}`}
+                          type="button"
+                          onClick={()=>void toggleProviderSaved(service.provider_id)}
+                          disabled={!token||user?.role!=='customer'||savingProviderId===service.provider_id}
+                          aria-label={savedProviderIds.includes(service.provider_id)?`Remove ${service.business_name} from saved providers`:`Save ${service.business_name}`}
                           className="absolute right-3 top-3 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#172b4d] shadow-sm ring-1 ring-[#e8e4dd] hover:ring-[#b49a62]"
-                        >{saved.includes(service.id)?'Saved ✓':'Save'}</button>
+                        >{savingProviderId===service.provider_id?'Saving…':savedProviderIds.includes(service.provider_id)?'Saved ✓':'Save provider'}</button>
                         <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[#58725f] shadow-sm">
                           <BadgeCheck className="size-3.5 text-[#b49a62]"/>Verified provider
                         </span>
@@ -333,7 +408,7 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
                             <p className="text-[11px] uppercase tracking-wide text-[#9aabb8]">{service.pricing_type.replaceAll('_',' ')}</p>
                             <p className="text-sm font-semibold text-[#172b4d]">{formatPrice(service.price,service.currency)}</p>
                           </div>
-                          <Link href="/booking" className="rounded-full bg-[#172b4d] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1e3a6a]">Request</Link>
+                          <Link href={`/booking?serviceId=${encodeURIComponent(service.id)}`} className="rounded-full bg-[#172b4d] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1e3a6a]">Request</Link>
                         </div>
                       </div>
                     </article>

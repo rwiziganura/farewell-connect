@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body, param } from 'express-validator';
 import {
   createCustomerBooking,
+  getMyBooking,
   getMyBookings,
   getProviderBookings,
   isPositiveBigIntId,
@@ -64,6 +65,13 @@ router.post(
   createCustomerBooking,
 );
 router.get('/my', authenticate, authorise('customer'), getMyBookings);
+router.get(
+  '/:bookingId',
+  authenticate,
+  authorise('customer'),
+  param('bookingId').custom(isPositiveBigIntId).withMessage('Booking ID must be a positive integer.'),
+  getMyBooking,
+);
 router.get('/provider', authenticate, authorise('provider'), getProviderBookings);
 router.patch(
   '/:bookingId/status',

@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import {
   createBooking,
+  findCustomerBooking,
   findCustomerBookings,
   findVerifiedProviderIdByUserId,
   findProviderBookings,
@@ -126,6 +127,19 @@ export async function getMyBookings(req, res) {
     return res.status(200).json({ success: true, bookings });
   } catch (error) {
     sendDatabaseError(res, error, 'retrieve bookings');
+  }
+}
+
+export async function getMyBooking(req, res) {
+  if (handleValidationErrors(req, res)) return;
+  try {
+    const booking = await findCustomerBooking(String(req.params.bookingId), req.user.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found.' });
+    }
+    return res.status(200).json({ success: true, booking });
+  } catch (error) {
+    return sendDatabaseError(res, error, 'retrieve booking');
   }
 }
 

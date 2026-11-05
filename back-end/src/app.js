@@ -8,6 +8,8 @@ import bookingsRouter from './routes/bookings.js';
 import adminRouter from './routes/admin.js';
 import servicesRouter from './routes/services.js';
 import usersRouter from './routes/users.js';
+import favoritesRouter from './routes/favorites.js';
+import providersRouter from './routes/providers.js';
 
 dotenv.config();
 
@@ -40,6 +42,8 @@ app.use('/api/bookings', bookingsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/services', servicesRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/favorites', favoritesRouter);
+app.use('/api/providers', providersRouter);
 
 // Handle requests to undefined routes
 app.use((req, res) => {

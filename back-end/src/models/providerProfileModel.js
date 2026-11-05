@@ -50,3 +50,19 @@ export async function findProviderProfileByUserId(userId) {
   );
   return rows[0] || null;
 }
+
+export async function findPublicProviderById(providerId) {
+  const [rows] = await pool.execute(
+    `SELECT CAST(pp.id AS CHAR) AS id, pp.business_name,
+            pp.business_description, pp.business_phone, pp.business_email,
+            pp.business_address, pp.district, pp.sector,
+            pp.verification_status, pp.average_rating, pp.total_reviews
+     FROM provider_profiles pp
+     JOIN users u ON u.id = pp.user_id
+     WHERE pp.id = ? AND pp.verification_status = 'verified'
+       AND u.role = 'provider' AND u.account_status = 'active'
+     LIMIT 1`,
+    [providerId],
+  );
+  return rows[0] || null;
+}
