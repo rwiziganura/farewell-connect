@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, BadgeCheck, CircleHelp, Flower2, Search, Star } from 'lucide-react'
 import { useAuth } from '@/app/providers'
@@ -15,6 +15,8 @@ const categoryNamesBySlug: Record<string, string> = {
   'decorations-and-flowers': 'Flowers & Decorations',
   'cremation-services': 'Cremation Services',
 }
+
+const MARKETPLACE_REQUEST_TIMEOUT_MS = 15_000
 
 type MarketplaceService = {
   id: string
@@ -103,6 +105,7 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
   const [savingProviderId,setSavingProviderId]=useState('')
   const [favoriteError,setFavoriteError]=useState('')
   const [sort,setSort]=useState('Popular')
+  const servicesRequestId = useRef(0)
 
   useEffect(() => {
     setCategoryId('')
@@ -118,6 +121,9 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
 
   useEffect(() => {
     const controller = new AbortController()
+    const requestId = ++servicesRequestId.current
+    let timedOut = false
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
     const params = new URLSearchParams()
     const trimmedSearch = search.trim()
     if (trimmedSearch) params.set('search', trimmedSearch)
@@ -131,11 +137,19 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
     setLoading(true)
     setError('')
     const timer = setTimeout(async () => {
+      timeoutId = setTimeout(() => {
+        timedOut = true
+        controller.abort()
+      }, MARKETPLACE_REQUEST_TIMEOUT_MS)
+
       try {
         const response = await fetch(apiUrl(`/api/services?${params.toString()}`), {
           signal: controller.signal,
         })
         const payload = await parseApiResponse(response)
+        if (servicesRequestId.current !== requestId) return
+        if (timedOut) throw new Error('Loading services timed out. Please try again.')
+        if (controller.signal.aborted) return
         if (!response.ok) {
           const message = isRecord(payload) && typeof payload.message === 'string'
             ? payload.message
@@ -154,17 +168,30 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
         setServices(payload.services)
         setPagination(payload.pagination)
       } catch (reason) {
-        if (controller.signal.aborted) return
+        if (servicesRequestId.current !== requestId) return
+        if (controller.signal.aborted && !timedOut) return
         setServices([])
         setPagination({page,limit,total:0,totalPages:0})
-        setError(reason instanceof Error ? reason.message : 'Could not load services. Please try again.')
+        setError(timedOut
+          ? 'Loading services timed out. Please try again.'
+          : reason instanceof Error ? reason.message : 'Could not load services. Please try again.')
       } finally {
-        if (!controller.signal.aborted) setLoading(false)
+        if (timeoutId) clearTimeout(timeoutId)
+        if (
+          servicesRequestId.current === requestId
+          && (!controller.signal.aborted || timedOut)
+        ) {
+          setLoading(false)
+        }
       }
     }, 250)
 
     return () => {
       clearTimeout(timer)
+      if (timeoutId) clearTimeout(timeoutId)
+      if (servicesRequestId.current === requestId) {
+        servicesRequestId.current += 1
+      }
       controller.abort()
     }
   }, [categoryId, district, limit, maxPrice, minPrice, page, retryCount, search])
