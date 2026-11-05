@@ -83,6 +83,13 @@ export function CustomerDashboard() {
   const [bookingsError, setBookingsError] = useState('')
   const [removingId, setRemovingId] = useState('')
 
+  useEffect(() => {
+    const requestedView = new URLSearchParams(window.location.search).get('view')
+    if (['Overview', 'Find Services', 'My Bookings', 'Saved Providers', 'Account Settings'].includes(requestedView ?? '')) {
+      setView(requestedView ?? 'Overview')
+    }
+  }, [])
+
   const loadFavorites = useCallback(async () => {
     if (!token) return
     setLoadingFavorites(true)
@@ -252,7 +259,7 @@ export function CustomerDashboard() {
                   <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b49a62]">Your account</p>
                   <h2 className="mt-3 max-w-2xl font-serif text-4xl leading-tight text-[#172b4d] sm:text-5xl">Find the support you need, with simplicity and care.</h2>
                   <p className="mt-5 max-w-xl leading-7 text-[#536172]">Explore trusted funeral-service providers and manage your actual requests here.</p>
-                  <Link href="/services" className="mt-7 inline-block rounded-full bg-[#172b4d] px-6 py-3.5 text-sm font-semibold text-white">
+                  <Link href="/dashboard/marketplace" className="mt-7 inline-block rounded-full bg-[#172b4d] px-6 py-3.5 text-sm font-semibold text-white">
                     Explore marketplace <ArrowRight className="ml-2 inline size-4" />
                   </Link>
                 </section>
@@ -267,7 +274,7 @@ export function CustomerDashboard() {
                       ? <p role="alert" className="mt-5 text-sm text-[#8a5b55]">{bookingsError}</p>
                       : bookings.length
                         ? <div className="mt-5 flex flex-col gap-4">{bookingCards(bookings.slice(0, 2))}</div>
-                        : <EmptyState title="No bookings yet" action="Explore marketplace" href="/services" />}
+                        : <EmptyState title="No bookings yet" action="Explore marketplace" href="/dashboard/marketplace" />}
                 </section>
               </>
             )}
@@ -275,7 +282,7 @@ export function CustomerDashboard() {
               <section>
                 <h2 className="font-serif text-4xl text-[#172b4d]">Find services with care.</h2>
                 <p className="mt-3 text-[#697586]">Search and compare providers when you&apos;re ready.</p>
-                <Link href="/services" className="mt-7 inline-block rounded-full bg-[#172b4d] px-6 py-3 text-sm font-semibold text-white">Explore marketplace <ArrowRight className="ml-2 inline size-4" /></Link>
+                <Link href="/dashboard/marketplace" className="mt-7 inline-block rounded-full bg-[#172b4d] px-6 py-3 text-sm font-semibold text-white">Explore marketplace <ArrowRight className="ml-2 inline size-4" /></Link>
               </section>
             )}
             {view === 'My Bookings' && (
@@ -287,7 +294,7 @@ export function CustomerDashboard() {
                     ? <div><p role="alert" className="mt-5 text-sm text-[#8a5b55]">{bookingsError}</p><button type="button" onClick={() => void loadBookings()} className="mt-3 text-sm font-semibold text-[#172b4d]">Try again</button></div>
                     : bookings.length
                       ? <div className="mt-6 flex flex-col gap-4">{bookingCards(bookings)}</div>
-                      : <EmptyState title="You haven’t made any bookings yet." action="Explore services" href="/services" />}
+                      : <EmptyState title="You haven’t made any bookings yet." action="Explore services" href="/dashboard/marketplace" />}
               </section>
             )}
             {view === 'Saved Providers' && (
@@ -299,7 +306,7 @@ export function CustomerDashboard() {
                   ? <p role="status" className="mt-5 text-sm text-[#697586]">Loading saved providers…</p>
                   : favorites.length
                     ? <div className="mt-6 grid gap-5 sm:grid-cols-2">{favoriteCards}</div>
-                    : !favoritesError && <EmptyState title="No saved providers yet" action="Explore marketplace" href="/services" />}
+                    : !favoritesError && <EmptyState title="No saved providers yet" action="Explore marketplace" href="/dashboard/marketplace" />}
                 {!loadingFavorites && favoritesError && <button type="button" onClick={() => void loadFavorites()} className="mt-3 text-sm font-semibold text-[#172b4d]">Try again</button>}
               </section>
             )}

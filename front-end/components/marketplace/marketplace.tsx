@@ -87,7 +87,13 @@ function formatPrice(value: string | number | null, currency: string) {
   return amount === null ? 'Price available on request' : `${amount.toLocaleString('en')} ${currency}`
 }
 
-export function Marketplace({ categorySlug }: { categorySlug?: string }){
+export function Marketplace({
+  categorySlug,
+  experience = 'public',
+}: {
+  categorySlug?: string
+  experience?: 'public' | 'customer'
+}){
   const {token,user}=useAuth()
   const [search,setSearch]=useState('')
   const [categoryId,setCategoryId]=useState('')
@@ -105,6 +111,7 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
   const [savingProviderId,setSavingProviderId]=useState('')
   const [favoriteError,setFavoriteError]=useState('')
   const [sort,setSort]=useState('Popular')
+  const [selectedService,setSelectedService]=useState<MarketplaceService|null>(null)
   const servicesRequestId = useRef(0)
 
   useEffect(() => {
@@ -286,19 +293,25 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
     setPage(1)
   }
 
-  return <><Header /><main className="min-h-screen bg-[#fbfaf7] pt-28">
+  return <>{experience === 'public' && <Header />}<main className={`min-h-screen bg-[#fbfaf7] ${experience === 'public' ? 'pt-28' : ''}`}>
     <div className="mx-auto max-w-7xl px-5 pb-24 lg:px-8">
-      <div className="flex flex-col justify-between gap-6 border-b border-[#e8e4dd] pb-8 md:flex-row md:items-end">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b49a62]">Service marketplace</p>
-          <h1 className="mt-2 font-serif text-4xl text-[#172b4d] sm:text-5xl">Find trusted <em className="font-light">funeral services.</em></h1>
-          <p className="mt-3 max-w-xl text-[#536172]">Compare funeral services from providers across Rwanda and find the support you need with confidence.</p>
-        </div>
-        {token
-          ? <Link href="/dashboard" className="shrink-0 rounded-full bg-[#172b4d] px-5 py-2.5 text-sm font-semibold text-white">My dashboard</Link>
-          : <Link href="/customer-registration" className="shrink-0 rounded-full bg-[#172b4d] px-5 py-2.5 text-sm font-semibold text-white">Get started <ArrowRight className="ml-1 inline size-4"/></Link>
-        }
-      </div>
+      {experience === 'customer'
+        ? <div className="border-b border-[#e8e4dd] pb-6">
+            <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b49a62]">Your marketplace</p>
+            <h1 className="mt-2 font-serif text-4xl text-[#172b4d] sm:text-5xl">Browse services</h1>
+            <p className="mt-3 max-w-xl text-[#536172]">Search available services and compare providers.</p>
+          </div>
+        : <div className="flex flex-col justify-between gap-6 border-b border-[#e8e4dd] pb-8 md:flex-row md:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b49a62]">Service marketplace</p>
+              <h1 className="mt-2 font-serif text-4xl text-[#172b4d] sm:text-5xl">Find trusted <em className="font-light">funeral services.</em></h1>
+              <p className="mt-3 max-w-xl text-[#536172]">Compare funeral services from providers across Rwanda and find the support you need with confidence.</p>
+            </div>
+            {token
+              ? <Link href="/dashboard" className="shrink-0 rounded-full bg-[#172b4d] px-5 py-2.5 text-sm font-semibold text-white">My dashboard</Link>
+              : <Link href="/customer-registration" className="shrink-0 rounded-full bg-[#172b4d] px-5 py-2.5 text-sm font-semibold text-white">Get started <ArrowRight className="ml-1 inline size-4"/></Link>
+            }
+          </div>}
 
       <div className="mt-8 rounded-2xl border border-[#e5e0d8] bg-white p-4 shadow-sm">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
@@ -416,8 +429,16 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
                       <div className="flex flex-1 flex-col p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <h2 className="font-serif text-lg font-semibold leading-snug text-[#172b4d]">{service.service_name}</h2>
-                            <p className="mt-0.5 text-xs text-[#697586]">{service.business_name}</p>
+                            <h2 className="font-serif text-lg font-semibold leading-snug text-[#172b4d]">
+                              {experience === 'customer'
+                                ? <button type="button" onClick={() => setSelectedService(service)} className="text-left hover:underline">{service.service_name}</button>
+                                : service.service_name}
+                            </h2>
+                            {experience === 'customer'
+                              ? <Link href={`/provider/${encodeURIComponent(service.provider_id)}`} className="mt-0.5 inline-block text-xs text-[#697586] hover:underline">
+                                  {service.business_name}
+                                </Link>
+                              : <p className="mt-0.5 text-xs text-[#697586]">{service.business_name}</p>}
                           </div>
                           {service.provider_rating!==null&&<span className="flex shrink-0 items-center gap-1 rounded-full bg-[#f5f0e8] px-2.5 py-1 text-xs font-semibold text-[#172b4d]">
                             <Star className="size-3.5 fill-[#b49a62] text-[#b49a62]"/>{numericValue(service.provider_rating)?.toLocaleString('en') ?? service.provider_rating}
@@ -441,6 +462,38 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
                     </article>
                   )}
                 </div>
+                {experience === 'customer' && selectedService && (
+                  <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[#172b4d]/50 p-4" onClick={() => setSelectedService(null)}>
+                    <section
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="marketplace-service-title"
+                      className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl sm:p-8"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[.15em] text-[#b49a62]">{selectedService.category_name}</p>
+                          <h2 id="marketplace-service-title" className="mt-2 font-serif text-2xl text-[#172b4d]">{selectedService.service_name}</h2>
+                          <Link href={`/provider/${encodeURIComponent(selectedService.provider_id)}`} className="mt-1 inline-block text-sm text-[#536172] hover:underline">
+                            {selectedService.business_name}
+                          </Link>
+                        </div>
+                        <button type="button" onClick={() => setSelectedService(null)} aria-label="Close service details" className="rounded-full border border-[#d9cfbd] px-3 py-1 text-sm text-[#172b4d]">Close</button>
+                      </div>
+                      <p className="mt-5 whitespace-pre-line text-sm leading-6 text-[#536172]">{selectedService.description?.trim() || 'The provider has not added a description yet.'}</p>
+                      <dl className="mt-5 grid gap-3 border-t border-[#eeeae3] pt-4 text-sm sm:grid-cols-2">
+                        <div><dt className="text-xs text-[#697586]">Price</dt><dd className="mt-1 font-semibold text-[#172b4d]">{formatPrice(selectedService.price, selectedService.currency)}</dd></div>
+                        <div><dt className="text-xs text-[#697586]">Availability</dt><dd className="mt-1 capitalize text-[#172b4d]">{selectedService.availability_status.replaceAll('_', ' ')}</dd></div>
+                        <div><dt className="text-xs text-[#697586]">Location</dt><dd className="mt-1 text-[#172b4d]">{locationFor(selectedService) || 'Location to be arranged'}</dd></div>
+                      </dl>
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <Link href={`/provider/${encodeURIComponent(selectedService.provider_id)}`} className="rounded-full border border-[#d9cfbd] px-5 py-2.5 text-sm font-semibold text-[#172b4d]">View provider</Link>
+                        <Link href={`/booking?serviceId=${encodeURIComponent(selectedService.id)}`} className="rounded-full bg-[#172b4d] px-5 py-2.5 text-sm font-semibold text-white">Request this service</Link>
+                      </div>
+                    </section>
+                  </div>
+                )}
                 <nav aria-label="Service listing pages" className="mt-8 flex items-center justify-between gap-4">
                   <p className="text-sm text-[#697586]">Page {pagination.page} of {pagination.totalPages}</p>
                   <div className="flex gap-2">
@@ -459,5 +512,5 @@ export function Marketplace({ categorySlug }: { categorySlug?: string }){
               </>
       }
     </div>
-  </main><Footer /></>
+  </main>{experience === 'public' && <Footer />}</>
 }
