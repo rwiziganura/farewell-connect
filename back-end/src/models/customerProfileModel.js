@@ -17,7 +17,7 @@ export async function createCustomerProfile(userId) {
  */
 export async function findCustomerProfileByUserId(userId) {
   const [rows] = await pool.query(
-    `SELECT u.id, u.full_name, u.email, u.phone, u.role,
+    `SELECT u.id, u.username, u.full_name, u.email, u.phone, u.role,
             u.account_status, u.email_verified, u.phone_verified,
             cp.profile_image_url, cp.preferred_language, cp.city, cp.district,
             u.created_at

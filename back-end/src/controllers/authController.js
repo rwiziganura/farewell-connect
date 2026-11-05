@@ -4,6 +4,7 @@ import { signToken } from '../utils/jwt.js';
 import {
   findUserByEmail,
   findUserByPhone,
+  findUserByUsername,
   findUserById,
   createUser,
 } from '../models/userModel.js';
@@ -83,7 +84,7 @@ export async function registerCustomer(req, res, next) {
     await createCustomerProfile(userId);
 
     // Sign a token so the client is immediately authenticated
-    const token = signToken({ id: userId, role: 'customer' });
+    const token = signToken({ id: userId, role: 'customer', token_version: 0 });
 
     return res.status(201).json({
       success: true,
@@ -187,7 +188,7 @@ export async function registerProvider(req, res, next) {
 /**
  * POST /api/auth/login
  *
- * Accepts email or phone + password.
+ * Accepts email, phone, or username + password.
  * Returns a JWT and safe user data on success.
  * Uses a generic error message for both "user not found" and "wrong password"
  * to avoid leaking which accounts exist.
@@ -198,9 +199,10 @@ export async function login(req, res, next) {
 
     const { identifier, password } = req.body;
 
-    // Try email first, then phone
+    // Preserve email and phone lookup precedence before trying a username.
     let user = await findUserByEmail(identifier);
     if (!user) user = await findUserByPhone(identifier);
+    if (!user) user = await findUserByUsername(identifier);
 
     // Generic message — do not reveal whether the account exists
     if (!user) {
@@ -226,7 +228,14 @@ export async function login(req, res, next) {
       });
     }
 
-    const token = signToken({ id: user.id, role: user.role });
+    if (!Number.isSafeInteger(user.token_version) || user.token_version < 0) {
+      throw new Error('User token version is missing or invalid.');
+    }
+    const token = signToken({
+      id: user.id,
+      role: user.role,
+      token_version: user.token_version,
+    });
 
     return res.status(200).json({
       success: true,
@@ -234,6 +243,7 @@ export async function login(req, res, next) {
       token,
       user: {
         id: user.id,
+        username: user.username,
         full_name: user.full_name,
         email: user.email,
         phone: user.phone,

@@ -17,7 +17,9 @@ export type UserRole = 'customer' | 'provider' | 'admin'
 export type AuthUser = {
   id: string | number
   role: UserRole
+  username?: string | null
   full_name?: string
+  email?: string | null
 }
 
 type AuthContextValue = {
@@ -26,6 +28,7 @@ type AuthContextValue = {
   initialized: boolean
   error: string | null
   login: (token: string, user: AuthUser) => void
+  updateUser: (user: AuthUser) => void
   logout: (redirectTo?: string) => void
   retryAuthentication: () => void
 }
@@ -140,6 +143,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setInitialized(true)
   }, [])
 
+  const updateUser = useCallback((authenticatedUser: AuthUser) => {
+    setUser(authenticatedUser)
+  }, [])
+
   const logout = useCallback((redirectTo = '/') => {
     window.localStorage.removeItem('fc_token')
     setToken(null)
@@ -150,8 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router])
 
   const value = useMemo(
-    () => ({ token, user, initialized, error, login, logout, retryAuthentication }),
-    [token, user, initialized, error, login, logout, retryAuthentication],
+    () => ({ token, user, initialized, error, login, updateUser, logout, retryAuthentication }),
+    [token, user, initialized, error, login, updateUser, logout, retryAuthentication],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

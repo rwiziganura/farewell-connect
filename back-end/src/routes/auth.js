@@ -82,7 +82,7 @@ const providerRegisterRules = [
 const loginRules = [
   body('identifier')
     .trim()
-    .notEmpty().withMessage('Email or phone number is required.'),
+    .notEmpty().withMessage('Email, phone number, or username is required.'),
 
   body('password')
     .notEmpty().withMessage('Password is required.'),
@@ -96,7 +96,7 @@ router.post('/register', customerRegisterRules, registerCustomer);
 // POST /api/auth/provider-register — provider registration
 router.post('/provider-register', providerRegisterRules, registerProvider);
 
-// POST /api/auth/login — login with email or phone
+// POST /api/auth/login — login with email, phone, or username
 router.post('/login', loginRules, login);
 
 // GET /api/auth/me — get current authenticated user (protected)

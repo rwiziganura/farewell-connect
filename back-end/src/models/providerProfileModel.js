@@ -37,7 +37,7 @@ export async function createProviderProfile({
  */
 export async function findProviderProfileByUserId(userId) {
   const [rows] = await pool.query(
-    `SELECT u.id, u.full_name, u.email, u.phone, u.role,
+    `SELECT u.id, u.username, u.full_name, u.email, u.phone, u.role,
             u.account_status,
             pp.business_name, pp.business_description, pp.business_phone,
             pp.business_email, pp.business_address, pp.district, pp.sector,
