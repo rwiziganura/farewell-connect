@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, CalendarDays } from 'lucide-react'
 import { useAuth } from '@/app/providers'
 import { apiUrl, isRecord, parseApiResponse } from '@/lib/api'
-import { Footer, Header } from '@/components/site-chrome'
 
 type ServiceOption = {
   id: string
@@ -128,9 +127,7 @@ export function BookingRequest({ initialServiceId = '' }: { initialServiceId?: s
   }
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-[#f5f0e8] px-5 pb-24 pt-32">
+      <main className="min-h-screen bg-[#f5f0e8] px-5 pb-24 pt-10">
         <form onSubmit={submitRequest} className="mx-auto max-w-3xl rounded-3xl bg-white p-7 shadow-xl sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b49a62]">Booking request</p>
           <h1 className="mt-3 font-serif text-4xl text-[#172b4d]">Request a service.</h1>
@@ -198,7 +195,5 @@ export function BookingRequest({ initialServiceId = '' }: { initialServiceId?: s
           </div>
         </form>
       </main>
-      <Footer />
-    </>
   )
 }

@@ -1,5 +1,5 @@
 import { BookingRequest } from '@/components/booking-request'
-import { RequireAuth } from '@/app/providers'
+import { CustomerWorkspace } from '@/components/customer-workspace'
 
 export default async function BookingPage({
   searchParams,
@@ -11,8 +11,8 @@ export default async function BookingPage({
     ? `/booking?serviceId=${encodeURIComponent(serviceId)}`
     : '/booking'
   return (
-    <RequireAuth role="customer" loginRedirectTo={`/login?redirectTo=${encodeURIComponent(requestedPath)}`}>
+    <CustomerWorkspace loginRedirectTo={`/login?redirectTo=${encodeURIComponent(requestedPath)}`}>
       <BookingRequest initialServiceId={serviceId} />
-    </RequireAuth>
+    </CustomerWorkspace>
   )
 }

@@ -1,5 +1,5 @@
-import { RequireAuth } from '@/app/providers'
 import { BookingDetails } from '@/components/booking-details'
+import { CustomerWorkspace } from '@/components/customer-workspace'
 
 export default async function BookingDetailsPage({
   params,
@@ -7,9 +7,10 @@ export default async function BookingDetailsPage({
   params: Promise<{ bookingId: string }>
 }) {
   const { bookingId } = await params
+  const requestedPath = `/booking/${encodeURIComponent(bookingId)}`
   return (
-    <RequireAuth role="customer">
+    <CustomerWorkspace loginRedirectTo={`/login?redirectTo=${encodeURIComponent(requestedPath)}`}>
       <BookingDetails bookingId={bookingId} />
-    </RequireAuth>
+    </CustomerWorkspace>
   )
 }

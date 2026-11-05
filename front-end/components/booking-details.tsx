@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { CalendarDays, Compass } from 'lucide-react'
 import { useAuth } from '@/app/providers'
 import { apiUrl, isRecord, parseApiResponse } from '@/lib/api'
-import { Footer, Header } from '@/components/site-chrome'
 
 type BookingDetailsData = {
   id: string
@@ -80,9 +79,7 @@ export function BookingDetails({ bookingId }: { bookingId: string }) {
   }, [bookingId, token])
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-[#fbfaf7] px-5 pb-24 pt-32">
+      <main className="min-h-screen bg-[#fbfaf7] px-5 pb-24 pt-10">
         <div className="mx-auto max-w-3xl rounded-3xl border border-[#e8e4dd] bg-white p-7 shadow-sm sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b49a62]">Booking details</p>
           {loading
@@ -107,11 +104,12 @@ export function BookingDetails({ bookingId }: { bookingId: string }) {
                   </div>
                   {booking.agreed_price !== null && <p className="mt-5 text-sm text-[#536172]">Agreed price: {Number(booking.agreed_price).toLocaleString()} {booking.currency}</p>}
                   {booking.customer_message && <div className="mt-6 rounded-xl bg-[#fbfaf7] p-5"><h2 className="font-semibold text-[#172b4d]">Your message</h2><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#536172]">{booking.customer_message}</p></div>}
+                  <Link href="/dashboard?view=My%20Bookings" className="mt-7 inline-block rounded-full bg-[#172b4d] px-5 py-3 text-sm font-semibold text-white">
+                    View My Bookings
+                  </Link>
                 </>
               )}
         </div>
       </main>
-      <Footer />
-    </>
   )
 }
